@@ -1,0 +1,87 @@
+% Base de conocimiento de películas
+% Hechos sobre películas: pelicula(titulo, genero, año, director, duracion_minutos)
+pelicula('El Padrino', drama, 1972, 'Francis Ford Coppola', 175).
+pelicula('Pulp Fiction', crimen, 1994, 'Quentin Tarantino', 154).
+pelicula('El Caballero Oscuro', accion, 2008, 'Christopher Nolan', 152).
+pelicula('Forrest Gump', drama, 1994, 'Robert Zemeckis', 142).
+pelicula('Matrix', ciencia_ficcion, 1999, 'Las Wachowski', 136).
+pelicula('Titanic', romance, 1997, 'James Cameron', 194).
+pelicula('El Rey León', animacion, 1994, 'Roger Allers', 88).
+pelicula('Avengers', accion, 2012, 'Joss Whedon', 143).
+pelicula('Inception', ciencia_ficcion, 2010, 'Christopher Nolan', 148).
+pelicula('La La Land', musical, 2016, 'Damien Chazelle', 128).
+pelicula('Joker', drama, 2019, 'Todd Phillips', 122).
+pelicula('Toy Story', animacion, 1995, 'John Lasseter', 81).
+pelicula('Casablanca', romance, 1942, 'Michael Curtiz', 102).
+pelicula('El Exorcista', terror, 1973, 'William Friedkin', 122).
+pelicula('Alien', terror, 1979, 'Ridley Scott', 117).
+
+% Hechos sobre géneros y sus características
+genero_caracteristica(accion, adrenalina).
+genero_caracteristica(accion, espectacular).
+genero_caracteristica(drama, emocional).
+genero_caracteristica(drama, reflexivo).
+genero_caracteristica(terror, suspenso).
+genero_caracteristica(terror, miedo).
+genero_caracteristica(romance, romantico).
+genero_caracteristica(romance, emocional).
+genero_caracteristica(ciencia_ficcion, futurista).
+genero_caracteristica(ciencia_ficcion, imaginativo).
+genero_caracteristica(animacion, familiar).
+genero_caracteristica(animacion, divertido).
+genero_caracteristica(crimen, intenso).
+genero_caracteristica(musical, musical).
+
+% Preferencias de duración
+duracion_corta(Pelicula) :- pelicula(Pelicula, _, _, _, Duracion), Duracion < 120.
+duracion_media(Pelicula) :- pelicula(Pelicula, _, _, _, Duracion), Duracion >= 120, Duracion =< 150.
+duracion_larga(Pelicula) :- pelicula(Pelicula, _, _, _, Duracion), Duracion > 150.
+
+% Épocas
+epoca_clasica(Pelicula) :- pelicula(Pelicula, _, Anio, _, _), Anio < 1980.
+epoca_moderna(Pelicula) :- pelicula(Pelicula, _, Anio, _, _), Anio >= 1980, Anio < 2000.
+epoca_contemporanea(Pelicula) :- pelicula(Pelicula, _, Anio, _, _), Anio >= 2000.
+
+% Reglas de recomendación
+recomendar_por_genero(Genero, Pelicula) :-
+    pelicula(Pelicula, Genero, _, _, _).
+
+recomendar_por_caracteristica(Caracteristica, Pelicula) :-
+    genero_caracteristica(Genero, Caracteristica),
+    pelicula(Pelicula, Genero, _, _, _).
+
+recomendar_por_director(Director, Pelicula) :-
+    pelicula(Pelicula, _, _, Director, _).
+
+recomendar_por_duracion(corta, Pelicula) :- duracion_corta(Pelicula).
+recomendar_por_duracion(media, Pelicula) :- duracion_media(Pelicula).
+recomendar_por_duracion(larga, Pelicula) :- duracion_larga(Pelicula).
+
+recomendar_por_epoca(clasica, Pelicula) :- epoca_clasica(Pelicula).
+recomendar_por_epoca(moderna, Pelicula) :- epoca_moderna(Pelicula).
+recomendar_por_epoca(contemporanea, Pelicula) :- epoca_contemporanea(Pelicula).
+
+% Regla compleja: recomendar película similar
+pelicula_similar(Pelicula1, Pelicula2) :-
+    pelicula(Pelicula1, Genero, _, _, _),
+    pelicula(Pelicula2, Genero, _, _, _),
+    Pelicula1 \= Pelicula2.
+
+% Obtener información completa de una película
+info_pelicula(Titulo, Genero, Anio, Director, Duracion) :-
+    pelicula(Titulo, Genero, Anio, Director, Duracion).
+
+% Reglas de estado de ánimo
+para_relajarse(Pelicula) :-
+    (pelicula(Pelicula, animacion, _, _, _) ;
+     pelicula(Pelicula, romance, _, _, _)),
+    duracion_media(Pelicula).
+
+para_emocionarse(Pelicula) :-
+    (pelicula(Pelicula, accion, _, _, _) ;
+     pelicula(Pelicula, ciencia_ficcion, _, _, _)).
+
+para_reflexionar(Pelicula) :-
+    pelicula(Pelicula, drama, _, _, _),
+    pelicula(Pelicula, _, Anio, _, _),
+    Anio > 1990.
