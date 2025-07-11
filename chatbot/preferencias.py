@@ -1,5 +1,5 @@
-from typing import List, Optional
-
+from typing import List, Optional, Any
+import json
 
 class PreferenciasUsuario:
     def __init__(self):
@@ -10,6 +10,35 @@ class PreferenciasUsuario:
         self.peliculas_no_gustadas: List[str] = []
         self.duracion_preferida: Optional[str] = None
         self.epoca_preferida: Optional[str] = None
+
+    def cargar(self, ruta: str = "preferencias.json") -> None:
+        try:
+            with open(ruta, "r", encoding="utf-8") as f:
+                datos: dict[str, Any] = json.load(f)
+                self.generos_favoritos = datos.get("generos_favoritos", [])
+                self.directores_favoritos = datos.get(
+                    "directores_favoritos", [])
+                self.peliculas_vistas = datos.get("peliculas_vistas", [])
+                self.peliculas_gustadas = datos.get("peliculas_gustadas", [])
+                self.peliculas_no_gustadas = datos.get(
+                    "peliculas_no_gustadas", [])
+                self.duracion_preferida = datos.get("duracion_preferida")
+                self.epoca_preferida = datos.get("epoca_preferida")
+        except FileNotFoundError:
+            pass  # No hay preferencias guardadas aún
+
+    def guardar(self, ruta: str = "preferencias.json") -> None:
+        datos: dict[str, object] = {
+            "generos_favoritos": self.generos_favoritos,
+            "directores_favoritos": self.directores_favoritos,
+            "peliculas_vistas": self.peliculas_vistas,
+            "peliculas_gustadas": self.peliculas_gustadas,
+            "peliculas_no_gustadas": self.peliculas_no_gustadas,
+            "duracion_preferida": self.duracion_preferida,
+            "epoca_preferida": self.epoca_preferida,
+        }
+        with open(ruta, "w", encoding="utf-8") as f:
+            json.dump(datos, f, ensure_ascii=False, indent=2)
 
     def agregar_genero(self, genero: str) -> None:
         if genero not in self.generos_favoritos:

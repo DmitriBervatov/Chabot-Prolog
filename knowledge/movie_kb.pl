@@ -1,5 +1,14 @@
 % Base de conocimiento de películas
 % Hechos sobre películas: pelicula(titulo, genero, año, director, duracion_minutos)
+pelicula('Amelie', comedia, 2001, 'Jean-Pierre Jeunet', 122).
+pelicula('El Gran Hotel Budapest', comedia, 2014, 'Wes Anderson', 99).
+pelicula('Interestelar', ciencia_ficcion, 2014, 'Christopher Nolan', 169).
+pelicula('Coco', animacion, 2017, 'Lee Unkrich', 105).
+pelicula('El Conjuro', terror, 2013, 'James Wan', 112).
+pelicula('La Lista de Schindler', drama, 1993, 'Steven Spielberg', 195).
+pelicula('Whiplash', musical, 2014, 'Damien Chazelle', 107).
+pelicula('El Resplandor', terror, 1980, 'Stanley Kubrick', 146).
+pelicula('La Vida es Bella', comedia, 1997, 'Roberto Benigni', 116).
 pelicula('El Padrino', drama, 1972, 'Francis Ford Coppola', 175).
 pelicula('Pulp Fiction', crimen, 1994, 'Quentin Tarantino', 154).
 pelicula('El Caballero Oscuro', accion, 2008, 'Christopher Nolan', 152).
@@ -17,6 +26,12 @@ pelicula('El Exorcista', terror, 1973, 'William Friedkin', 122).
 pelicula('Alien', terror, 1979, 'Ridley Scott', 117).
 
 % Hechos sobre géneros y sus características
+genero_caracteristica(comedia, divertido).
+genero_caracteristica(comedia, alegre).
+genero_caracteristica(fantasia, imaginativo).
+genero_caracteristica(fantasia, magico).
+genero_caracteristica(biografico, realista).
+genero_caracteristica(biografico, inspirador).
 genero_caracteristica(accion, adrenalina).
 genero_caracteristica(accion, espectacular).
 genero_caracteristica(drama, emocional).
@@ -85,3 +100,15 @@ para_reflexionar(Pelicula) :-
     pelicula(Pelicula, drama, _, _, _),
     pelicula(Pelicula, _, Anio, _, _),
     Anio > 1990.
+
+para_inspirarse(Pelicula) :-
+    (pelicula(Pelicula, biografico, _, _, _) ;
+     pelicula(Pelicula, drama, _, _, _)),
+    pelicula(Pelicula, _, Anio, _, _),
+    Anio > 1990.
+
+para_reir(Pelicula) :-
+    pelicula(Pelicula, comedia, _, _, _).
+
+para_sonar(Pelicula) :-
+    pelicula(Pelicula, fantasia, _, _, _).

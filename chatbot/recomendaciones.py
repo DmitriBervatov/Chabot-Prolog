@@ -57,6 +57,9 @@ def formatear_resultado(bot: Any, resultados: list[dict[str, Any]], encabezado: 
     respuesta = f"{encabezado}\n\n"
     for r in resultados[:3]:
         titulo = r[clave]
+        # Guarda el título recomendado
+        if hasattr(bot, "peliculas_recomendadas"):
+            bot.peliculas_recomendadas.add(titulo)
         info = bot.prolog.query(f"info_pelicula('{titulo}', G, A, D, Dur)")
         if info:
             datos = info[0]

@@ -1,10 +1,6 @@
-
-from chatbot.core import MovieChatbot
-
-
-def main():
-    bot = MovieChatbot()
-    bot.chat()
+from chatbot.cinebot_gui import main
+from dotenv import load_dotenv
+load_dotenv()
 
 
 if __name__ == "__main__":

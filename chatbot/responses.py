@@ -1,5 +1,7 @@
-from chatbot.intenciones import GENERO_INTENCIONES, DURACION_INTENCIONES, EPOCA_INTENCIONES, ANIMO_INTENCIONES
+import re
+from chatbot.intenciones import GENERO_INTENCIONES, DURACION_INTENCIONES, EPOCA_INTENCIONES, ANIMO_INTENCIONES, PATRONES_INTENCIONES
 from chatbot.saludos import respuestas_saludo, patrones_saludo
+from chatbot.utils import normalizar_texto
 from chatbot.sugerencias import sugerir_titulo
 from typing import Any
 from chatbot.recomendaciones import (
@@ -16,13 +18,31 @@ from chatbot.utils import (
     detectar_pelicula_gustada,
     detectar_pelicula_no_gustada,
     detectar_genero_favorito,
+    corregir_titulo_similar
 )
 from chatbot.formatter import format_movie_info
 import random
 
 
 def detectar_intencion(mensaje: str, bot: Any) -> str:
-    # Verifica primero si el usuario está expresando una preferencia
+
+    mensaje_norm = normalizar_texto(mensaje)
+
+    for intencion, patrones in PATRONES_INTENCIONES.items():
+        for patron in patrones:
+            if re.search(patron, mensaje_norm):
+                # Si es duración, guarda preferencia
+                if intencion.startswith("duracion_"):
+                    bot.preferencias.establecer_duracion(
+                        intencion.replace("duracion_", ""))
+                return intencion
+
+    genero_favorito = detectar_genero_favorito(mensaje)
+    if genero_favorito:
+        bot.preferencias.agregar_genero(genero_favorito)
+        return 'genero_favorito'
+
+    # Luego detecta si es una película gustada
     pelicula_gustada = detectar_pelicula_gustada(mensaje)
     if pelicula_gustada:
         bot.preferencias.marcar_pelicula_gustada(pelicula_gustada)
@@ -87,24 +107,47 @@ def detectar_intencion(mensaje: str, bot: Any) -> str:
         return 'animo_reflexionar'
     elif "parecido a" in mensaje or "similar a" in mensaje:
         return "peliculas_similares"
-    elif (
-        "informacion de" in mensaje or "info de" in mensaje or "detalles de" in mensaje or
-        mensaje.startswith("informacion ") or mensaje.startswith(
-            "info ") or mensaje.startswith("detalles ")
-    ):
+    elif re.search(r"(quien dirigio|director de|dur[aá]|genero de|de que genero es|cu[aá]nto dura|informaci[oó]n|info|detalles|dime sobre|sabes sobre)", mensaje_norm):
         return "info_pelicula"
     elif "recomiendame" in mensaje or "sugiéreme" in mensaje:
         # Usa preferencias guardadas para recomendar
         return "recomendar_personalizado"
+    elif "inspirar" in mensaje or "inspiración" in mensaje:
+        return 'animo_inspirar'
+    elif "reir" in mensaje or "risa" in mensaje or "divertir" in mensaje:
+        return 'animo_reir'
+    elif "soñar" in mensaje or "fantasía" in mensaje:
+        return 'animo_sonar'
+
+    titulos = [r["P"] for r in bot.prolog.query("pelicula(P, _, _, _, _)")]
+    mensaje_limpio = mensaje.strip().title()
+    if mensaje_limpio in titulos:
+        return "info_pelicula"
+
+    # Si el mensaje es "pelicula <titulo>", extrae el título y muestra info
+    if mensaje.startswith("pelicula "):
+        posible_titulo = mensaje.replace("pelicula ", "").strip().title()
+        if posible_titulo in titulos:
+            return "info_pelicula"
 
     return 'general'
 
 
 def procesar_respuesta(intencion: str, bot: Any, mensaje: str) -> str:
+    titulos_disponibles = [r["P"]
+                           for r in bot.prolog.query("pelicula(P, _, _, _, _)")]
+    print(f"Titulos disponibles: {titulos_disponibles}")
+    
     # Respuestas a preferencias expresadas
     if intencion == 'pelicula_gustada':
         pelicula = detectar_pelicula_gustada(mensaje)
-        return f"¡Me alegro que te haya gustado '{pelicula}'! Lo tendré en cuenta para futuras recomendaciones."
+        # Validar si la película existe en Prolog
+        existe = bot.prolog.query(f"pelicula('{pelicula}', _, _, _, _)")
+        if existe:
+            bot.preferencias.marcar_pelicula_gustada(pelicula)
+            return f"¡Me alegro que te haya gustado '{pelicula}'! Lo tendré en cuenta para futuras recomendaciones."
+        else:
+            return f"No encontré la película '{pelicula}' en mi base de datos. ¿Podrías revisar el nombre?"
 
     if intencion == 'pelicula_no_gustada':
         pelicula = detectar_pelicula_no_gustada(mensaje)
@@ -142,13 +185,23 @@ def procesar_respuesta(intencion: str, bot: Any, mensaje: str) -> str:
     elif intencion == 'nombre':
         return f"¡Mucho gusto, {bot.nombre_usuario}! ¿Qué género buscas?"
 
+
     elif intencion == "peliculas_similares":
-        titulo = extraer_titulo(mensaje)
-        return recomendar_peliculas_similares(bot, titulo)
+        titulo_extraido = extraer_titulo(mensaje)
+        titulo_corregido = corregir_titulo_similar(
+            titulo_extraido, titulos_disponibles)
+        return recomendar_peliculas_similares(bot, titulo_corregido)
 
     elif intencion == "info_pelicula":
-        titulo = extraer_titulo_info(mensaje)
-        return info_pelicula(bot, titulo)
+        titulo_extraido = extraer_titulo_info(mensaje)
+        print(f"[🕵️‍♂️] Título extraído: {titulo_extraido}")
+        if not titulo_extraido:
+            titulo_extraido = mensaje.strip().title()
+        titulo_corregido = corregir_titulo_similar(
+            titulo_extraido, titulos_disponibles)
+        print(f"[✅] Título corregido: {titulo_corregido}")
+        
+        return info_pelicula(bot, titulo_corregido)
 
     # Por genero
     if intencion in GENERO_INTENCIONES:
